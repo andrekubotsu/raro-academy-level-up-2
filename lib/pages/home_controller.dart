@@ -1,6 +1,6 @@
 class CalcController {
-  RegExp _regexDivOperation = RegExp(r"(^([\-0-9.]+)\/([0-9.\%]+))");
-  RegExp _regexMultOperation = RegExp(r"(^([\-0-9.]+)\*([0-9.\%]+))");
+  RegExp _regexDivOperation = RegExp(r"(([\-0-9.]+)\/([0-9.\%]+))");
+  RegExp _regexMultOperation = RegExp(r"(([\-0-9.]+)\*([0-9.\%]+))");
   RegExp _regexSumOperation = RegExp(r"(^([\-0-9.]+)\+([0-9.\%]+))");
   RegExp _regexMinusOperation = RegExp(r"(^([\-0-9.]+)\-([0-9.\%]+))");
 
