@@ -1,34 +1,35 @@
 class CalcController {
-  RegExp _regexDivOperation = RegExp(r"(([\-0-9.]+)\/([0-9.\%]+))");
-  RegExp _regexMultOperation = RegExp(r"(([\-0-9.]+)\*([0-9.\%]+))");
-  RegExp _regexSumOperation = RegExp(r"(^([\-0-9.]+)\+([0-9.\%]+))");
-  RegExp _regexMinusOperation = RegExp(r"(^([\-0-9.]+)\-([0-9.\%]+))");
+  RegExp _regexDivOperation = RegExp(r"(^([\-0-9.]+)\/([0-9.]+))");
+  RegExp _regexMultOperation = RegExp(r"(^([\-0-9.]+)\*([0-9.]+))");
+  RegExp _regexSumOperation = RegExp(r"(^([\-0-9.]+)\+([0-9.]+))");
+  RegExp _regexMinusOperation = RegExp(r"(^([\-0-9.]+)\-([0-9.]+))");
 
-  RegExp _regexPercentSingle = RegExp(r"(^([0-9.]+)\%)");
+  //RegExp regexPercentSingle = RegExp(r"(^([0-9.]+)\%)");
 
-  RegExp _regexDivPercentOperation = RegExp(r"[\/\%]");
-  RegExp _regexMultPercentOperation = RegExp(r"[\*\%]");
-  RegExp _regexSumPercentOperation = RegExp(r"[\+\%]");
-  RegExp _regexMinusPercentOperation = RegExp(r"[\-\%]");
-
-  RegExp _regexHasAnyOperation = RegExp(r"(^([\-0-9.]+)[\-\+\*\/]([0-9.]+))");
+  //RegExp regexHasAnyOperation = RegExp(r"(^([\-0-9.]+)[\-\+\*\/]([0-9.]+))");
 
   RegExp _regexDivOperator = RegExp(r"[\/]");
   RegExp _regexMultOperator = RegExp(r"[\*]");
   RegExp _regexSumOperator = RegExp(r"[\+]");
   RegExp _regexMinusOperator = RegExp(r"\-(?!.*\-)");
-  RegExp _regexPecentOperator = RegExp(r"[\%]");
+  //RegExp regexPecentOperator = RegExp(r"[\%]");
 
-//TODO: operações com porcentagem não estão 100%
+  RegExp _regexMultDivOperators = RegExp(r"[\*\/]");
+  RegExp _regexSumSubOperators = RegExp(r"[\+\-]");
+
+  bool _toBeChecked(RegExp toBeCheckedRegex, String results) {
+    bool hasChecked = toBeCheckedRegex.hasMatch(results);
+    return hasChecked;
+  }
 
   _singleOperation(
     String results,
     RegExp operationRegex,
     RegExp operatorRegex,
-    RegExp operatorPercentRegex,
     operationFunction,
   ) {
     String match = '';
+    double result;
 
     String currentOperaton = results;
     Iterable<Match> matches = operationRegex.allMatches(currentOperaton);
@@ -36,58 +37,77 @@ class CalcController {
       match = m[0]!;
     }
 
-    var checkPercent = _regexPecentOperator.hasMatch(match);
+    var numbers = match.split(operatorRegex);
 
-    print(checkPercent);
+    print(numbers);
 
-    if (checkPercent) {
-      var numbers = match.split(operatorPercentRegex);
+    var a = double.tryParse(numbers[0]);
+    var b = double.tryParse(numbers[1]);
 
-      var a = double.tryParse(numbers[0]);
-      var b = double.tryParse(numbers[1]);
+    print(a);
+    print(b);
 
-      if (operationFunction == _sum || operationFunction == _sub) {
-        var percent = _percent(a, b);
-
-        var result = operationFunction(a, percent);
-
-        results = results.replaceAll(operationRegex, result.toString());
-
-        print(results);
-
-        return results;
-      } else {
-        var percentmd;
-        if (b != null) {
-          percentmd = b / 100;
-        }
-        var result = operationFunction(a, percentmd);
-
-        results = results.replaceAll(operationRegex, result.toString());
-
-        print(results);
-
-        return results;
-      }
-    } else {
-      var numbers = match.split(operatorRegex);
-
-      var a = double.tryParse(numbers[0]);
-      var b = double.tryParse(numbers[1]);
-
-      var result = operationFunction(a, b);
-
+    if (a != null && b != null) {
+      result = operationFunction(a, b);
       results = results.replaceAll(operationRegex, result.toString());
-
       print(results);
 
       return results;
+    } else {
+      print("Algo deu errado!");
     }
   }
 
-  _checkOperation(operationRegex, results) {
-    var hasOperation = operationRegex.hasMatch(results);
-    return hasOperation;
+  calculator(operation) {
+    String results = operation;
+    bool checkMultDivPresence;
+    do {
+      int multIndex;
+      int divIndex;
+      checkMultDivPresence = _toBeChecked(_regexMultDivOperators, results);
+      if (checkMultDivPresence == true) {
+        multIndex = results.indexOf("*");
+        divIndex = results.indexOf("/");
+
+        print(multIndex);
+        print(divIndex);
+
+        if (multIndex > -1 && divIndex > multIndex || divIndex == -1) {
+          results = _singleOperation(
+              results, _regexMultOperation, _regexMultOperator, _mult);
+        } else {
+          results = _singleOperation(
+              results, _regexDivOperation, _regexDivOperator, _div);
+        }
+      }
+    } while (checkMultDivPresence == true);
+
+    bool checkSumSubPresence;
+
+    do {
+      int sumIndex;
+      int subIndex;
+      checkSumSubPresence = _toBeChecked(_regexSumSubOperators, results);
+      if (checkSumSubPresence == true) {
+        sumIndex = results.indexOf("+");
+        subIndex = results.indexOf("-");
+
+        print(sumIndex);
+        print(subIndex);
+
+        if (sumIndex > -1 && subIndex > sumIndex ||
+            subIndex == -1 ||
+            subIndex == 0) {
+          results = _singleOperation(
+              results, _regexSumOperation, _regexSumOperator, _sum);
+        } else {
+          results = _singleOperation(
+              results, _regexMinusOperation, _regexMinusOperator, _sub);
+        }
+      }
+    } while (checkSumSubPresence == true);
+
+    return results;
   }
 
   _sum(a, b) {
@@ -104,71 +124,5 @@ class CalcController {
 
   _div(a, b) {
     return a / b;
-  }
-
-  _percent(a, b) {
-    return (b / 100) * a;
-  }
-
-  calculator(String operation) {
-    String results = operation;
-
-    var checkPercentSingle = _checkOperation(_regexPercentSingle, results);
-    if (checkPercentSingle) {
-      String match = '';
-      RegExp exp = RegExp(r"(^([0-9.]+)\%)");
-
-      String currentOperaton = results;
-
-      Iterable<Match> matches = exp.allMatches(currentOperaton);
-      for (var m in matches) {
-        match = m[0]!;
-      }
-
-      var numbers = match.split(RegExp(r"[\%]"));
-
-      var result;
-      var n = double.tryParse(numbers[0]);
-      if (n != null) {
-        result = n / 100;
-      }
-
-      results =
-          results.replaceAll(RegExp(r"(^([0-9.]+)\%)"), result.toString());
-
-      print(result);
-    }
-
-    var checkDivOperation = _checkOperation(_regexDivOperation, results);
-    if (checkDivOperation) {
-      results = _singleOperation(results, _regexDivOperation, _regexDivOperator,
-          _regexDivPercentOperation, _div);
-    }
-
-    var checkMultOperation = _checkOperation(_regexMultOperation, results);
-    if (checkMultOperation) {
-      results = _singleOperation(results, _regexMultOperation,
-          _regexMultOperator, _regexMultPercentOperation, _mult);
-    }
-
-    var checkSumOperation = _checkOperation(_regexSumOperation, results);
-    if (checkSumOperation) {
-      results = _singleOperation(results, _regexSumOperation, _regexSumOperator,
-          _regexSumPercentOperation, _sum);
-    }
-
-    var checkMinusOperation = _checkOperation(_regexMinusOperation, results);
-    if (checkMinusOperation) {
-      results = _singleOperation(results, _regexMinusOperation,
-          _regexMinusOperator, _regexMinusPercentOperation, _sub);
-    }
-
-    var check = _checkOperation(_regexHasAnyOperation, results);
-
-    if (check == false) {
-      return results;
-    } else {
-      return calculator(results);
-    }
   }
 }
