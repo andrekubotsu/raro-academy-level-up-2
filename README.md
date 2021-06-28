@@ -16,6 +16,7 @@ It is not finished. It does simple operations only.
 
 **Dependencies**
 - flutter_staggered_grid_view: ^0.4.0
+- Google Fonts
 
 **Screenshots**
 
